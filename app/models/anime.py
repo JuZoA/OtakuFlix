@@ -7,7 +7,8 @@ from sqlalchemy import String, Text, DateTime, func, Date
 from database.conf import Base
 
 
-class Anime(Base):
+class AnimeModel(Base):
+
     anime_id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text)
