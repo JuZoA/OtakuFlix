@@ -7,15 +7,16 @@ from sqlalchemy import String, DateTime, func, ForeignKey
 
 from database.conf import Base
 
-from anime.models.anime import Anime
-from authentication.models.user import User
+from app.models.anime import AnimeModel
+from app.models.users import UserModel
 
-class Favorites(Base):
+class FavoritesModel(Base):
+
     favorite_id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey(Anime.id, ondelete="CASCADE"), primary_key=True
+        ForeignKey(AnimeModel.anime_id, ondelete="CASCADE"), primary_key=True
     )
     anime_id: Mapped[int] = mapped_column(
-        ForeignKey(User.id, ondelete="CASCADE"), primary_key=True
+        ForeignKey(UserModel.user_id, ondelete="CASCADE"), primary_key=True
     )
     created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())

@@ -1,27 +1,71 @@
-from sqlalchemy.ext.asyncio import (
-                                    AsyncAttrs,
-                                    AsyncEngine,
-                                    AsyncSession,
-                                    async_sessionmaker,
-                                    create_async_engine,
-                                )
+from typing import Any
 
-from sqlalchemy.ext.declarative import declarative_base
-from pathlib import PurePath
-from typing import Final
-from sqlalchemy import MetaData
+from asyncpg import UniqueViolationError
+from fastapi import HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import declared_attr, DeclarativeBase
 
-_SQLALCHEMY_DATABASE_URL: Final[str] = "postgresql+asyncpg://postgres:qwerty@127.0..01:5432/OtakuFlix"
+class Base(DeclarativeBase):
+    id: Any
+    __name__: str
+    # Generate __tablename__ automatically
 
-engine: Final[AsyncEngine] = create_async_engine(_SQLALCHEMY_DATABASE_URL)
+    @declared_attr
+    def __tablename__(self) -> str:
+        return self.__name__.lower()
 
-async_session_maker: Final[async_sessionmaker[AsyncSession]] = async_sessionmaker(
-    engine, expire_on_commit=False, autoflush=False, autocommit=False
-)
+    async def save(self, db_session: AsyncSession):
+        """
 
+        :param db_session:
+        :return:
+        """
+        try:
+            db_session.add(self)
+            return await db_session.commit()
+        except SQLAlchemyError as ex:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=repr(ex)) from ex
 
+    async def delete(self, db_session: AsyncSession):
+        """
 
+        :param db_session:
+        :return:
+        """
+        try:
+            await db_session.delete(self)
+            await db_session.commit()
+            return True
+        except SQLAlchemyError as ex:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=repr(ex)) from ex
 
-Base = declarative_base()
+    async def update(self, db: AsyncSession, **kwargs):
+        """
 
+        :param db:
+        :param kwargs
+        :return:
+        """
+        try:
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+            return await db.commit()
+        except SQLAlchemyError as ex:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=repr(ex)) from ex
+
+    async def save_or_update(self, db: AsyncSession):
+        try:
+            db.add(self)
+            return await db.commit()
+        except IntegrityError as exception:
+            if isinstance(exception.orig, UniqueViolationError):
+                return await db.merge(self)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=repr(exception),
+                ) from exception
+        finally:
+            await db.close()
 
