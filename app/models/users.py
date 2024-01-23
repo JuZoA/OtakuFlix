@@ -3,41 +3,34 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-from sqlalchemy import String, DateTime, func, LargeBinary, select
+from sqlalchemy import String, DateTime, func, LargeBinary, Boolean
+from fastapi import Depends
+from database.db import Base
+from fastapi_users.db import SQLAlchemyBaseUserTable
+
+from database.db import get_async_session, engine, async_session
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi_users.db import SQLAlchemyUserDatabase
 
-from database.conf import Base
-import uuid
-from typing import Any
+class UserModel(SQLAlchemyBaseUserTable[int], Base):
+    __tablename__ = "user"
 
-import bcrypt
-from passlib.context import CryptContext
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(
+            String(length=320), unique=True, index=True, nullable=False
+        )
+    hashed_password: Mapped[str] = mapped_column(
+            String(length=1024), nullable=False
+        )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_superuser: Mapped[bool] = mapped_column(
+            Boolean, default=False, nullable=False
+        )
+    is_verified: Mapped[bool] = mapped_column(
+            Boolean, default=False, nullable=False
+        )
+    
 
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-class UserModel(Base):
-
-    user_id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    _hashed_password: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
-    email: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
-
-    @property
-    def password(self):
-        return self._hashed_password.decode("utf-8")
-
-    @password.setter
-    def password(self, password: str):
-        self._hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-
-    def check_password(self, password: str):
-        return pwd_context.verify(password, self.password)
-
-    @classmethod
-    async def find(cls, database_session: AsyncSession, where_conditions: list[Any]):
-        _stmt = select(cls).where(*where_conditions)
-        _result = await database_session.execute(_stmt)
-        return _result.scalars().first()
+async def get_user_db(session: AsyncSession = Depends(get_async_session)):
+    yield SQLAlchemyUserDatabase(session, UserModel)

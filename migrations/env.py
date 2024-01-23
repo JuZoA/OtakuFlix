@@ -18,7 +18,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from database.conf import Base
+from database.db import Base
 from app.models.anime import AnimeModel
 from app.models.favorites import FavoritesModel
 from app.models.users import UserModel
