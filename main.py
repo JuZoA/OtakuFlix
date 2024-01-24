@@ -2,10 +2,11 @@ from fastapi import FastAPI
 import uvicorn
 from fastapi_users import fastapi_users, FastAPIUsers
 from app.auth.auth import auth_backend
-from app.schemas.user import UserRead, UserCreate
+from app.schemas.user import UserRead, UserCreate, UserDelete
 from app.models.users import UserModel
 from app.auth.manager import get_user_manager
 from app.routes.video import video_app
+from app.routes.anime import anime_app
 
 app = FastAPI(title="OtakuFlix")
 
@@ -29,4 +30,10 @@ app.include_router(
 
 app.include_router(
     video_app,
+    tags=["video"]
+)
+
+app.include_router(
+    anime_app,
+    tags=["anime"]
 )
