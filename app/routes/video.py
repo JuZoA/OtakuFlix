@@ -1,9 +1,10 @@
 from app.models.video import VideoModel
 from app.schemas.video import VideoCreate, VideoGet, VideoDelete
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, File, BackgroundTasks
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import get_async_session
+from app.services.service_video import write_video
 
 
 video_app = APIRouter()
@@ -45,11 +46,23 @@ async def delete_video(video_id: int,
 
 
 @video_app.post("/video/upload", response_model=VideoCreate)
-async def create_video(video: VideoCreate, 
-                       session: AsyncSession = Depends(get_async_session)
+async def create_video(
+        backgorund_tasks: BackgroundTasks,
+        video: VideoCreate,
+        file: UploadFile = File(...),
+        session: AsyncSession = Depends(get_async_session)
     ):
-    video_post = VideoModel(**video.dict())
+    file_name = f'media/{file.filename}'
+
+    if file.content_type == 'video/mp4':
+        backgorund_tasks.add_task(write_video, file_name, file)
+    else:
+        raise HTTPException(418, "It isn't mp4")
+    video_post = VideoModel(
+        file=file_name,
+        **video.dict()
+    )
     session.add(video_post)
     await session.commit()
 
-    return video
+    return video_post

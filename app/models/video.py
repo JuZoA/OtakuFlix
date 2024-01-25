@@ -18,6 +18,6 @@ class VideoModel(Base):
         ForeignKey(AnimeModel.id, ondelete="CASCADE"), primary_key=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    url: Mapped[str] = mapped_column(nullable=False)
+    file: Mapped[str] = mapped_column(String(1000))
     created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())

@@ -1,8 +1,8 @@
-"""creation a models
+"""update
 
-Revision ID: e9631c370311
+Revision ID: 757665b9ccb6
 Revises: 
-Create Date: 2024-01-24 14:40:22.805255
+Create Date: 2024-01-25 13:19:09.764215
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e9631c370311'
+revision: str = '757665b9ccb6'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -55,7 +55,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('anime_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=255), nullable=False),
-    sa.Column('url', sa.String(), nullable=False),
+    sa.Column('file', sa.String(length=1000), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['anime_id'], ['anime.id'], ondelete='CASCADE'),
